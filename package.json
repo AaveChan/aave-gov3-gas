@@ -1,0 +1,23 @@
+{
+  "name": "aave-gov3-gas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AaveChan/aave-gov3-gas.git"
+  },
+  "author": "JosepBove (ACI)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AaveChan/aave-gov3-gas/issues"
+  },
+  "homepage": "https://github.com/AaveChan/aave-gov3-gas#readme",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2"
+  }
+}
