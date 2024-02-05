@@ -1,4 +1,4 @@
-edit .env file for the desired code range
+edit .env file for the desired block range & add your etherscan API key.
 
 
 `npm i`
