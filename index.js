@@ -76,6 +76,7 @@ async function getProposalsStats() {
       delegates[idx].otherGouvernanceInteractions =
         delegates[idx].otherGouvernanceInteractions.add(gas);
 
+      // Manage redeemCancellationFee function calls
       if (history[i].data.startsWith("0x9043ffc3")) {
         const receipt = await etherscanProvider.getTransactionReceipt(
           history[i].hash
