@@ -34,30 +34,32 @@ async function getProposalsStats() {
   );
 
   for (let i = 0; i < history.length; i++) {
-    // Only accept the createProposal function calls
-    if (!history[i].data.startsWith("0x3bec1bfc")) continue;
 
-    let idx = -1;
+    // Manage createProposal function calls
+    if(history[i].data.startsWith("0x3bec1bfc")) {
 
-    // Find delegate index
-    for (let j = 0; j < delegates.length; j++) {
-      if (delegates[j].addresses.includes(history[i].from)) idx = j;
-    }
-    if (idx == -1) continue;
+      let idx = -1;
 
-    if (proposals) {
-      const receipt = await etherscanProvider.getTransactionReceipt(
-        history[i].hash
-      );
-      const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+      // Find delegate index
+      for (let j = 0; j < delegates.length; j++) {
+        if (delegates[j].addresses.includes(history[i].from)) idx = j;
+      }
+      if (idx == -1) continue;
 
-      delegates[idx].proposals = delegates[idx].proposals.add(gas);
-    }
+      if (proposals) {
+        const receipt = await etherscanProvider.getTransactionReceipt(
+          history[i].hash
+        );
+        const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
 
-    if (deposits) {
-      const value = history[i].value;
+        delegates[idx].proposals = delegates[idx].proposals.add(gas);
+      }
 
-      delegates[idx].deposits = delegates[idx].deposits.add(value);
+      if (deposits) {
+        const value = history[i].value;
+
+        delegates[idx].deposits = delegates[idx].deposits.add(value);
+      }
     }
   }
 }
