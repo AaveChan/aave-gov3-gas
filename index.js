@@ -75,6 +75,22 @@ async function getProposalsStats() {
 
       delegates[idx].otherGouvernanceInteractions =
         delegates[idx].otherGouvernanceInteractions.add(gas);
+
+      if (history[i].data.startsWith("0x9043ffc3")) {
+        const receipt = await etherscanProvider.getTransactionReceipt(
+          history[i].hash
+        );
+        receipt.logs.forEach((log) => {
+          if (
+            log.data ==
+            "0x00000000000000000000000000000000000000000000000000b1a2bc2ec50000"
+          ) {
+            delegates[idx].withdrawals = delegates[idx].withdrawals.add(
+              log.data
+            );
+          }
+        });
+      }
     }
   }
 }
@@ -157,6 +173,7 @@ async function writeOutput() {
         .add(delegates[i].proposals)
         .add(delegates[i].otherGouvernanceInteractions)
         .add(delegates[i].otherInteractions)
+        .sub(delegates[i].withdrawals)
     );
 
     delegates[i].deposits = ethers.utils.formatEther(delegates[i].deposits);
@@ -172,6 +189,9 @@ async function writeOutput() {
     );
     delegates[i].otherInteractions = ethers.utils.formatEther(
       delegates[i].otherInteractions
+    );
+    delegates[i].withdrawals = ethers.utils.formatEther(
+      delegates[i].withdrawals
     );
   }
 
@@ -201,6 +221,7 @@ async function parseDelegates() {
       otherInteractions: ethers.BigNumber.from(0),
       otherGouvernanceInteractions: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
+      withdrawals: ethers.BigNumber.from(0),
       total: ethers.BigNumber.from(0),
     });
   }
