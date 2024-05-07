@@ -4,16 +4,21 @@
 			"name": "ACI",
 			"addresses": [
 				"0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922",
-				"0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4"
+				"0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4",
+				"0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193"
 			],
-			"proposals": "0.043806477360602023",
-			"payloads": "0.259393767558430647",
-			"deposits": "0.25",
-			"total": "0.55320024491903267"
+			"proposals": "0.869893562940342967",
+			"creationPayloads": "0.353015491816298228",
+			"executionPayloads": "0.790967693600158905",
+			"otherInteractions": "1.18416449928577393",
+			"otherGouvernanceInteractions": "0.023496538766539519",
+			"deposits": "3.55",
+			"withdrawals": "3.15",
+			"total": "3.621537786409113549"
 		}
 	],
 	"block_range": {
-		"from": "18784165",
-		"to": "19012737"
+		"from": "18959200",
+		"to": "19818369"
 	}
 }
