@@ -5,6 +5,7 @@ require("dotenv").config();
 const AAVE_GOVERNANCE = "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7";
 const AAVE_ETH_PAYLOAD_CONTROLLER =
   "0xdAbad81aF85554E9ae636395611C58F7eC1aAEc5";
+const CONTRACT_0x914d = "0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7";
 
 const deposits = true;
 const payloads = true;
@@ -21,6 +22,7 @@ async function main() {
   await parseDelegates();
   await getProposalsStats();
   if (payloads) await getPayloadsStats();
+  await getOtherInteractions();
   await writeOutput();
 }
 
@@ -99,19 +101,48 @@ async function getPayloadsStats() {
   }
 }
 
+async function getOtherInteractions() {
+  const history = await etherscanProvider.getHistory(
+    CONTRACT_0x914d,
+    process.env.FROM_BLOCK,
+    process.env.TO_BLOCK
+  );
+
+  for (let i = 0; i < history.length; i++) {
+    let idx = -1;
+
+    // Find delegate index
+    for (let j = 0; j < delegates.length; j++) {
+      if (delegates[j].addresses.includes(history[i].from)) idx = j;
+    }
+    if (idx == -1) continue;
+
+    const receipt = await etherscanProvider.getTransactionReceipt(
+      history[i].hash
+    );
+    const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+    if (history[i].data.startsWith("0x76310000")) {
+      delegates[idx].otherInteractions =
+        delegates[idx].otherInteractions.add(gas);
+    }
+  }
+}
+
 async function writeOutput() {
   console.log("Writing output to file...");
 
   for (let i = 0; i < delegates.length; i++) {
+
     delegates[i].total = ethers.utils.formatEther(
-      delegates[i].total.add(
-        delegates[i].deposits.add(
-          delegates[i].creationPayloads.add(
-            delegates[i].executionPayloads.add(delegates[i].proposals)
-          )
-        )
-      )
+      delegates[i].deposits
+        .add(delegates[i].creationPayloads)
+        .add(delegates[i].executionPayloads)
+        .add(delegates[i].proposals)
+        .add(delegates[i].otherInteractions)
     );
+
+
     delegates[i].deposits = ethers.utils.formatEther(delegates[i].deposits);
     delegates[i].creationPayloads = ethers.utils.formatEther(
       delegates[i].creationPayloads
@@ -120,6 +151,9 @@ async function writeOutput() {
       delegates[i].executionPayloads
     );
     delegates[i].proposals = ethers.utils.formatEther(delegates[i].proposals);
+    delegates[i].otherInteractions = ethers.utils.formatEther(
+      delegates[i].otherInteractions
+    );
   }
 
   const file = {
@@ -145,6 +179,7 @@ async function parseDelegates() {
       proposals: ethers.BigNumber.from(0),
       creationPayloads: ethers.BigNumber.from(0),
       executionPayloads: ethers.BigNumber.from(0),
+      otherInteractions: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
       total: ethers.BigNumber.from(0),
     });
