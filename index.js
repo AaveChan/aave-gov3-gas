@@ -76,24 +76,26 @@ async function getPayloadsStats() {
     }
     if (idx == -1) continue;
 
+    const receipt = await etherscanProvider.getTransactionReceipt(
+      history[i].hash
+    );
+    const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
     // If it's an execute payload function
     if (history[i].data.startsWith("0x92cdb834")) {
-      const receipt = await etherscanProvider.getTransactionReceipt(
-        history[i].hash
-      );
-      const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
-      delegates[idx].payloads = delegates[idx].payloads.add(gas);
+      delegates[idx].executionPayloads =
+        delegates[idx].executionPayloads.add(gas);
     }
-    /*
     // If it's create payload function
-    if(history[i].data.startsWith('0xe8733894')) {
-      const target = '0x' + history[i].data.slice(10 + 64*3, 10 +64*4).replace(/^0+/, '');
+    if (history[i].data.startsWith("0xe8733894")) {
+      // const target = '0x' + history[i].data.slice(10 + 64*3, 10 +64*4).replace(/^0+/, '');
       //0xa9d439364f425e22ef04e71bef7647464774d551
-      const blockTx = await etherscanProvider.getBlockWithTransactions(history[i].blockNumber);
-      console.log(blockTx);
-      const payload = await etherscanProvider.getHistory(target, process.env.FROM_BLOCK, process.env.TO_BLOCK);
+      // const blockTx = await etherscanProvider.getBlockWithTransactions(history[i].blockNumber);
+      // console.log(blockTx);
+      // const payload = await etherscanProvider.getHistory(target, process.env.FROM_BLOCK, process.env.TO_BLOCK);
+      delegates[idx].creationPayloads =
+        delegates[idx].creationPayloads.add(gas);
     }
-   */
   }
 }
 
@@ -104,12 +106,19 @@ async function writeOutput() {
     delegates[i].total = ethers.utils.formatEther(
       delegates[i].total.add(
         delegates[i].deposits.add(
-          delegates[i].payloads.add(delegates[i].proposals)
+          delegates[i].creationPayloads.add(
+            delegates[i].executionPayloads.add(delegates[i].proposals)
+          )
         )
       )
     );
     delegates[i].deposits = ethers.utils.formatEther(delegates[i].deposits);
-    delegates[i].payloads = ethers.utils.formatEther(delegates[i].payloads);
+    delegates[i].creationPayloads = ethers.utils.formatEther(
+      delegates[i].creationPayloads
+    );
+    delegates[i].executionPayloads = ethers.utils.formatEther(
+      delegates[i].executionPayloads
+    );
     delegates[i].proposals = ethers.utils.formatEther(delegates[i].proposals);
   }
 
@@ -134,7 +143,8 @@ async function parseDelegates() {
       name: data[i].name,
       addresses: data[i].addresses,
       proposals: ethers.BigNumber.from(0),
-      payloads: ethers.BigNumber.from(0),
+      creationPayloads: ethers.BigNumber.from(0),
+      executionPayloads: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
       total: ethers.BigNumber.from(0),
     });
