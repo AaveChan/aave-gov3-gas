@@ -6,6 +6,7 @@ const AAVE_GOVERNANCE = "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7";
 const AAVE_ETH_PAYLOAD_CONTROLLER =
   "0xdAbad81aF85554E9ae636395611C58F7eC1aAEc5";
 const CONTRACT_0x914d = "0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7";
+const AAVE_POOL_V2 = "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9";
 
 const deposits = true;
 const payloads = true;
@@ -23,6 +24,7 @@ async function main() {
   await getProposalsStats();
   if (payloads) await getPayloadsStats();
   await getOtherInteractions();
+  await getSwapTovariableStats();
   await writeOutput();
 }
 
@@ -163,6 +165,34 @@ async function getOtherInteractions() {
   }
 }
 
+async function getSwapTovariableStats() {
+  const history = await etherscanProvider.getHistory(
+    AAVE_POOL_V2,
+    process.env.FROM_BLOCK,
+    process.env.TO_BLOCK
+  );
+
+  for (let i = 0; i < history.length; i++) {
+    let idx = -1;
+
+    // Find delegate index
+    for (let j = 0; j < delegates.length; j++) {
+      if (delegates[j].addresses.includes(history[i].from)) idx = j;
+    }
+    if (idx == -1) continue;
+
+    const receipt = await etherscanProvider.getTransactionReceipt(
+      history[i].hash
+    );
+    const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+    if (history[i].data.startsWith("0x2520d5ee")) {
+      delegates[idx].swapPositionsToVariableV2Mainnet =
+        delegates[idx].swapPositionsToVariableV2Mainnet.add(gas);
+    }
+  }
+}
+
 async function writeOutput() {
   console.log("Writing output to file...");
 
@@ -173,6 +203,7 @@ async function writeOutput() {
         .add(delegates[i].executionPayloads)
         .add(delegates[i].proposals)
         .add(delegates[i].otherGouvernanceInteractions)
+        .add(delegates[i].swapPositionsToVariableV2Mainnet)
         .add(delegates[i].otherInteractions)
         .sub(delegates[i].withdrawals)
     );
@@ -187,6 +218,9 @@ async function writeOutput() {
     delegates[i].proposals = ethers.utils.formatEther(delegates[i].proposals);
     delegates[i].otherGouvernanceInteractions = ethers.utils.formatEther(
       delegates[i].otherGouvernanceInteractions
+    );
+    delegates[i].swapPositionsToVariableV2Mainnet = ethers.utils.formatEther(
+      delegates[i].swapPositionsToVariableV2Mainnet
     );
     delegates[i].otherInteractions = ethers.utils.formatEther(
       delegates[i].otherInteractions
@@ -219,6 +253,7 @@ async function parseDelegates() {
       proposals: ethers.BigNumber.from(0),
       creationPayloads: ethers.BigNumber.from(0),
       executionPayloads: ethers.BigNumber.from(0),
+      swapPositionsToVariableV2Mainnet: ethers.BigNumber.from(0),
       otherInteractions: ethers.BigNumber.from(0),
       otherGouvernanceInteractions: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
