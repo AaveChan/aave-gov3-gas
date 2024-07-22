@@ -11,6 +11,7 @@ const AAVE_POOL_V2 = "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9";
 
 const ACI_ETH = "0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922";
 const AAVECHAN_ETH = "0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4";
+const DEPLOYER_21 = "0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193";
 
 const deposits = true;
 const payloads = true;
@@ -24,16 +25,14 @@ const etherscanProvider = new ethers.providers.EtherscanProvider(
 let delegates = [];
 
 async function main() {
-  console.log(process.env.FROM_BLOCK);
-  console.log(process.env.TO_BLOCK);
   await parseDelegates();
-  console.log(delegates);
 
   // await getProposalsStats();
   // if (payloads) await getPayloadsStats();
   // await getOtherInteractions();
   // await getSwapTovariableStats();
-  await getSafeWalletInteractions();
+  // await getSafeWalletInteractions();
+  await getGasFromAllTxs();
   await writeOutput();
 }
 
@@ -227,14 +226,10 @@ async function getSafeWalletInteractions() {
 
     for (const user of addressesToCheck) {
       const address = await isSafeWallet(user.address);
-      console.log("user.address", user.address);
-      console.log("address", address);
       if (address) {
         const gas = await getGasFromTx(user.txHash);
         delegates[idx].safeWalletInteractions =
           delegates[idx].safeWalletInteractions.add(gas);
-        console.log("address", address);
-        console.log("gas", gas);
       }
     }
   };
@@ -255,7 +250,7 @@ async function getSafeWalletInteractions() {
 
 // inspired from https://github.com/abipub/evm-proxy-detection
 const isSafeWallet = async (proxyAddress) => {
-  // https://github.com/safe-global/safe-deployments/tree/main/src/assets
+  // found at https://github.com/safe-global/safe-deployments/tree/main/src/assets
   const canonicalAddressesMainnet = [
     "0x8942595a2dc5181df0465af0d7be08c8f23c93af", // v0.1.0 // found at https://help.safe.global/en/articles/40834-verify-safe-creation
     "0xb6029EA3B2c51D09a50B53CA8012FeEB05bDa35A", // v1.0.0
@@ -286,8 +281,6 @@ const isSafeWallet = async (proxyAddress) => {
       // throw new Error("Empty address");
       return null;
     }
-    console.log("address", address);
-    console.log("canonicalAddressesMainnet", canonicalAddressesMainnet);
 
     if (!canonicalAddressesMainnet.includes(ethers.utils.getAddress(address))) {
       return null;
@@ -324,6 +317,29 @@ const isSafeWallet = async (proxyAddress) => {
   }
 };
 
+const getGasFromAllTxs = async () => {
+  let idx = -1;
+  // Find delegate index
+  for (let j = 0; j < delegates.length; j++) {
+    if (delegates[j].addresses.includes(DEPLOYER_21)) idx = j;
+  }
+  if (idx == -1) return null;
+
+  const history = await etherscanProvider.getHistory(
+    DEPLOYER_21,
+    process.env.FROM_BLOCK,
+    process.env.TO_BLOCK
+  );
+
+  let gas = ethers.BigNumber.from(0);
+  for (let i = 0; i < history.length; i++) {
+    console.log(history[i]);
+    const gas = await getGasFromTx(history[i].hash);
+    delegates[idx].allTxsGasDeployer21 =
+      delegates[idx].allTxsGasDeployer21.add(gas);
+  }
+};
+
 const getGasFromTx = async (txHash) => {
   const receipt = await etherscanProvider.getTransactionReceipt(txHash);
   const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
@@ -342,6 +358,7 @@ async function writeOutput() {
         .add(delegates[i].otherGouvernanceInteractions)
         .add(delegates[i].swapPositionsToVariableV2Mainnet)
         .add(delegates[i].safeWalletInteractions)
+        .add(delegates[i].allTxsGasDeployer21)
         .add(delegates[i].otherInteractions)
         .sub(delegates[i].withdrawals)
     );
@@ -362,6 +379,9 @@ async function writeOutput() {
     );
     delegates[i].safeWalletInteractions = ethers.utils.formatEther(
       delegates[i].safeWalletInteractions
+    );
+    delegates[i].allTxsGasDeployer21 = ethers.utils.formatEther(
+      delegates[i].allTxsGasDeployer21
     );
     delegates[i].otherInteractions = ethers.utils.formatEther(
       delegates[i].otherInteractions
@@ -396,6 +416,7 @@ async function parseDelegates() {
       executionPayloads: ethers.BigNumber.from(0),
       swapPositionsToVariableV2Mainnet: ethers.BigNumber.from(0),
       safeWalletInteractions: ethers.BigNumber.from(0),
+      allTxsGasDeployer21: ethers.BigNumber.from(0),
       otherInteractions: ethers.BigNumber.from(0),
       otherGouvernanceInteractions: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
