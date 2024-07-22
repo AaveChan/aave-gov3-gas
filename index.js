@@ -26,12 +26,11 @@ let delegates = [];
 
 async function main() {
   await parseDelegates();
-
-  // await getProposalsStats();
-  // if (payloads) await getPayloadsStats();
-  // await getOtherInteractions();
-  // await getSwapTovariableStats();
-  // await getSafeWalletInteractions();
+  await getProposalsStats();
+  if (payloads) await getPayloadsStats();
+  await getOtherInteractions();
+  await getSwapTovariableStats();
+  await getSafeWalletInteractions();
   await getGasFromAllTxs();
   await writeOutput();
 }
@@ -331,9 +330,7 @@ const getGasFromAllTxs = async () => {
     process.env.TO_BLOCK
   );
 
-  let gas = ethers.BigNumber.from(0);
   for (let i = 0; i < history.length; i++) {
-    console.log(history[i]);
     const gas = await getGasFromTx(history[i].hash);
     delegates[idx].allTxsGasDeployer21 =
       delegates[idx].allTxsGasDeployer21.add(gas);
