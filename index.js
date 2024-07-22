@@ -1,5 +1,6 @@
 import fs from "fs";
 import { ethers } from "ethers";
+import "dotenv/config";
 
 const AAVE_GOVERNANCE = "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7";
 const AAVE_ETH_PAYLOAD_CONTROLLER =
