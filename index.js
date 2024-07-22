@@ -6,7 +6,7 @@ import { constants, ethers } from "ethers";
 // import { configDotenv } from "dotenv";
 
 import { InfuraProvider } from "@ethersproject/providers";
-import detectProxyTarget from "evm-proxy-detection";
+// import detectProxyTarget from "evm-proxy-detection";
 // @ts-ignore
 const { default: detectProxy } = detectProxyTarget;
 // import { detectProxy } from "evm-proxy-detection";
@@ -395,13 +395,13 @@ async function writeOutput() {
     },
   };
 
-  fs.writeFile("./data/output.json", JSON.stringify(file, null, "\t"));
+  fs.writeFileSync("./data/output.json", JSON.stringify(file, null, "\t"));
 }
 
 async function parseDelegates() {
   console.log("Parsing delegates from input file...");
-  let data = await fs.readFile("./data/delegates.json", "utf-8");
-  data = JSON.parse(data);
+  const dataStringified = fs.readFileSync("./data/delegates.json", "utf-8");
+  const data = JSON.parse(dataStringified);
 
   for (let i = 0; i < data.length; i++) {
     delegates.push({
