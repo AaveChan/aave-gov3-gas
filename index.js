@@ -27,12 +27,14 @@ async function main() {
   console.log(process.env.FROM_BLOCK);
   console.log(process.env.TO_BLOCK);
   await parseDelegates();
+  console.log(delegates);
+
   // await getProposalsStats();
   // if (payloads) await getPayloadsStats();
   // await getOtherInteractions();
   // await getSwapTovariableStats();
-  // await writeOutput();
   await getSafeWalletInteractions();
+  await writeOutput();
 }
 
 async function getProposalsStats() {
@@ -225,6 +227,8 @@ async function getSafeWalletInteractions() {
 
     for (const user of addressesToCheck) {
       const address = await isSafeWallet(user.address);
+      console.log("user.address", user.address);
+      console.log("address", address);
       if (address) {
         const gas = await getGasFromTx(user.txHash);
         delegates[idx].safeWalletInteractions =
@@ -243,9 +247,7 @@ async function getSafeWalletInteractions() {
     for (let j = 0; j < delegates.length; j++) {
       if (delegates[j].addresses.includes(address)) idx = j;
     }
-    console.log("address", address);
-    console.log("idx", idx);
-    if (idx == -1) return null;
+    if (idx == -1) continue;
 
     await safeWalletInteractions(address, idx);
   }
@@ -259,8 +261,14 @@ const isSafeWallet = async (proxyAddress) => {
     "0xb6029EA3B2c51D09a50B53CA8012FeEB05bDa35A", // v1.0.0
     "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F", // v1.1.0
     "0x6851D6fDFAfD08c0295C392436245E5bc78B0185", // v1.2.0
-    "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552", // v1.3.0
-    "0x41675C099F32341bf84BFc5382aF534df5C7461a", // v1.4.0
+    "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552", // v1.3.0 canonical
+    "0x69f4D1788e39c87893C980c06EdF4b7f686e2938", // v1.3.0 eip155
+    "0xB00ce5CCcdEf57e539ddcEd01DF43a13855d9910", // v1.3.0 zksync
+    "0x3E5c63644E683549055b9Be8653de26E0B4CD36E", // v1.3.0 L2 canonical
+    "0xfb1bffC9d739B8D520DaF37dF666da4C687191EA", // v1.3.0 L2 eip155
+    "0x1727c2c531cf966f902E5927b98490fDFb3b2b70", // v1.3.0 L2 zksync
+    "0x41675C099F32341bf84BFc5382aF534df5C7461a", // v1.4.1
+    "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762", // v1.4.1 L2
   ];
 
   const readAddress = (value) => {
@@ -278,8 +286,10 @@ const isSafeWallet = async (proxyAddress) => {
       // throw new Error("Empty address");
       return null;
     }
+    console.log("address", address);
+    console.log("canonicalAddressesMainnet", canonicalAddressesMainnet);
 
-    if (!canonicalAddressesMainnet.includes(address)) {
+    if (!canonicalAddressesMainnet.includes(ethers.utils.getAddress(address))) {
       return null;
     }
 
@@ -331,6 +341,7 @@ async function writeOutput() {
         .add(delegates[i].proposals)
         .add(delegates[i].otherGouvernanceInteractions)
         .add(delegates[i].swapPositionsToVariableV2Mainnet)
+        .add(delegates[i].safeWalletInteractions)
         .add(delegates[i].otherInteractions)
         .sub(delegates[i].withdrawals)
     );
@@ -348,6 +359,9 @@ async function writeOutput() {
     );
     delegates[i].swapPositionsToVariableV2Mainnet = ethers.utils.formatEther(
       delegates[i].swapPositionsToVariableV2Mainnet
+    );
+    delegates[i].safeWalletInteractions = ethers.utils.formatEther(
+      delegates[i].safeWalletInteractions
     );
     delegates[i].otherInteractions = ethers.utils.formatEther(
       delegates[i].otherInteractions
@@ -381,6 +395,7 @@ async function parseDelegates() {
       creationPayloads: ethers.BigNumber.from(0),
       executionPayloads: ethers.BigNumber.from(0),
       swapPositionsToVariableV2Mainnet: ethers.BigNumber.from(0),
+      safeWalletInteractions: ethers.BigNumber.from(0),
       otherInteractions: ethers.BigNumber.from(0),
       otherGouvernanceInteractions: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
