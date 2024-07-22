@@ -247,7 +247,9 @@ async function getSafeWalletInteractions() {
   }
 }
 
-// inspired from https://github.com/abipub/evm-proxy-detection
+// Inspired from:
+// - https://github.com/abipub/evm-proxy-detection
+// - https://ethereum.stackexchange.com/a/141258
 const isSafeWallet = async (proxyAddress) => {
   // found at https://github.com/safe-global/safe-deployments/tree/main/src/assets
   const canonicalAddressesMainnet = [
