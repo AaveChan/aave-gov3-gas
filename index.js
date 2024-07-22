@@ -1,16 +1,7 @@
-// const fs = require("fs").promises;
-// const ethers = require("ethers");
-// require("dotenv").config();
 import fs from "fs";
 import { constants, ethers } from "ethers";
-// import { configDotenv } from "dotenv";
-
 import { InfuraProvider } from "@ethersproject/providers";
-// import detectProxyTarget from "evm-proxy-detection";
-// @ts-ignore
-const { default: detectProxy } = detectProxyTarget;
-// import { detectProxy } from "evm-proxy-detection";
-// import detectProxy from "evm-proxy-detection";
+import "dotenv/config";
 
 const AAVE_GOVERNANCE = "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7";
 const AAVE_ETH_PAYLOAD_CONTROLLER =
@@ -19,6 +10,7 @@ const CONTRACT_0x914d = "0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7";
 const AAVE_POOL_V2 = "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9";
 
 const ACI_ETH = "0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922";
+const AAVECHAN_ETH = "0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4";
 
 const deposits = true;
 const payloads = true;
@@ -32,7 +24,9 @@ const etherscanProvider = new ethers.providers.EtherscanProvider(
 let delegates = [];
 
 async function main() {
-  // await parseDelegates();
+  console.log(process.env.FROM_BLOCK);
+  console.log(process.env.TO_BLOCK);
+  await parseDelegates();
   // await getProposalsStats();
   // if (payloads) await getPayloadsStats();
   // await getOtherInteractions();
@@ -207,77 +201,54 @@ async function getSwapTovariableStats() {
 }
 
 async function getSafeWalletInteractions() {
-  // const code = await etherscanProvider.getCode(
-  //   "0xac140648435d03f784879cd789130F22Ef588Fcd"
-  // );
-  // // const code = await etherscanProvider.getCode(
-  // //   "0xfb1bffc9d739b8d520daf37df666da4c687191ea"
-  // // );
-  // const code2 = await etherscanProvider.getCode(
-  //   "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552"
-  // );
-  // etherscanProvider.im;
-  // console.log("code: ", code);
-  // console.log("code2: ", code2);
+  const safeWalletInteractions = async (address, idx) => {
+    const history = await etherscanProvider.getHistory(
+      address,
+      process.env.FROM_BLOCK,
+      process.env.TO_BLOCK
+    );
 
-  // const safe = await isSafeWallet("0x464C71f6c2F760DdA6093dCB91C24c39e5d6e18c");
-  // console.log("safe: ", safe);
+    let addressesToCheck = history.map((tx) => {
+      if (tx.from === ACI_ETH && tx.to) {
+        return {
+          address: tx.to,
+          txHash: tx.hash,
+        };
+      } else {
+        return null;
+      }
+    });
+    addressesToCheck = addressesToCheck.filter((address) => address !== null); // remove nulls
+    addressesToCheck = addressesToCheck.filter(
+      (v, i, a) => a.findIndex((t) => t.address === v.address) === i
+    ); // remove duplicates
 
-  // const infuraProvider = new InfuraProvider(1, process.env.INFURA_API_KEY);
-  // const requestFunc = ({ method, params }) =>
-  //   infuraProvider.send(method, params);
-
-  const history = await etherscanProvider.getHistory(
-    ACI_ETH,
-    process.env.FROM_BLOCK,
-    process.env.TO_BLOCK
-  );
-
-  let addressesToCheck = history.map((tx) => {
-    if (tx.from === ACI_ETH && tx.to) {
-      return {
-        address: tx.to,
-        txHash: tx.hash,
-      };
-    } else {
-      return null;
+    for (const user of addressesToCheck) {
+      const address = await isSafeWallet(user.address);
+      if (address) {
+        const gas = await getGasFromTx(user.txHash);
+        delegates[idx].safeWalletInteractions =
+          delegates[idx].safeWalletInteractions.add(gas);
+        console.log("address", address);
+        console.log("gas", gas);
+      }
     }
-  });
-  // remove nulls
-  addressesToCheck = addressesToCheck.filter((address) => address !== null);
-  console.log("addressesToCheck 1", addressesToCheck);
-  // remove duplicates
-  addressesToCheck = addressesToCheck.filter(
-    (v, i, a) => a.findIndex((t) => t.address === v.address) === i
-  );
+  };
 
-  console.log("addressesToCheck 2", addressesToCheck);
+  const addressesToCheck = [ACI_ETH, AAVECHAN_ETH];
 
-  for (const user of addressesToCheck) {
-    const address = await isSafeWallet(user.address);
-    console.log("user.address", user.address);
-    console.log("pointedTo", address);
-    if (address) {
-      const gas = await getGasFromTx(user.txHash);
-      console.log("address", address);
-      console.log("gas", gas);
+  for (const address of addressesToCheck) {
+    let idx = -1;
+    // Find delegate index
+    for (let j = 0; j < delegates.length; j++) {
+      if (delegates[j].addresses.includes(address)) idx = j;
     }
+    console.log("address", address);
+    console.log("idx", idx);
+    if (idx == -1) return null;
+
+    await safeWalletInteractions(address, idx);
   }
-
-  // for (let i = 0; i < history.length; i++) {
-  //   // console.log(history[i]);
-  //   const to = history[i].to;
-  //   // const target = await detectProxy(to, requestFunc);
-  //   // console.log("target", target);
-  //   const address = await isSafeWallet(to);
-  //   console.log("to", to);
-  //   // console.log("address", address);
-  //   if (address) {
-  //     const gas = await getGasFromTx(history[i].hash);
-  //     console.log("to", to);
-  //     console.log("gas", gas);
-  //   }
-  // }
 }
 
 // inspired from https://github.com/abipub/evm-proxy-detection
@@ -336,7 +307,6 @@ const isSafeWallet = async (proxyAddress) => {
         "latest",
       ],
     });
-    // console.log("pointedAddress", pointedAddress);
     return readAddress(pointedAddress);
   } catch (error) {
     // console.error("Catch Error: ", error);
