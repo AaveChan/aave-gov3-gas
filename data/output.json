@@ -1,25 +1,22 @@
 {
-  "delegates": [
-    {
-      "name": "ACI",
-      "addresses": [
-        "0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922",
-        "0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4",
-        "0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193"
-      ],
-      "proposals": "0.090669168819436543",
-      "creationPayloads": "0.034207602211778844",
-      "executionPayloads": "0.0",
-      "swapPositionsToVariableV2Mainnet": "1.905530762857031902",
-      "otherInteractions": "0.126142492306571226",
-      "otherGouvernanceInteractions": "0.005016353397715838",
-      "deposits": "0.85",
-      "withdrawals": "0.75",
-      "total": "2.261566379592534353"
-    }
-  ],
-  "block_range": {
-    "from": "19818370",
-    "to": "20062310"
-  }
+	"delegates": [
+		{
+			"name": "ACI",
+			"addresses": [
+				"0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922",
+				"0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4",
+				"0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193"
+			],
+			"proposals": "1.010534951224122191",
+			"creationPayloads": "0.483175019536310817",
+			"executionPayloads": "1.027305853273985325",
+			"swapPositionsToVariableV2Mainnet": "0.0",
+			"otherInteractions": "1.406295799097564775",
+			"otherGouvernanceInteractions": "0.028512892164255357",
+			"deposits": "4.85",
+			"withdrawals": "3.9",
+			"total": "4.905824515296238465"
+		}
+	],
+	"block_range": {}
 }

@@ -1,6 +1,5 @@
-const ethers = require("ethers");
-const fs = require("fs").promises;
-require("dotenv").config();
+import fs from "fs";
+import { ethers } from "ethers";
 
 const AAVE_GOVERNANCE = "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7";
 const AAVE_ETH_PAYLOAD_CONTROLLER =
@@ -238,13 +237,13 @@ async function writeOutput() {
     },
   };
 
-  await fs.writeFile("./data/output.json", JSON.stringify(file, null, "\t"));
+  fs.writeFileSync("./data/output.json", JSON.stringify(file, null, "\t"));
 }
 
 async function parseDelegates() {
   console.log("Parsing delegates from input file...");
-  let data = await fs.readFile("./data/delegates.json", "utf-8");
-  data = JSON.parse(data);
+  const dataStringified = fs.readFileSync("./data/delegates.json", "utf-8");
+  const data = JSON.parse(dataStringified);
 
   for (let i = 0; i < data.length; i++) {
     delegates.push({
