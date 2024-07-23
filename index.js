@@ -27,21 +27,21 @@ let delegates = [];
 
 async function main() {
   await parseDelegates();
-  // console.log("Delegates parsed successfully!");
-  // await getProposalsStats();
-  // console.log("Proposals stats fetched successfully!");
-  // if (payloads) {
-  //   await getPayloadsStats();
-  //   console.log("Payloads stats fetched successfully!");
-  // }
-  // await getOtherInteractions();
-  // console.log("Other interactions stats fetched successfully");
-  // await getSwapTovariableStats();
-  // console.log("Swap to variable stats fetched successfully");
-  // await getSafeWalletInteractions();
-  // console.log("SafeWallet interactions stats fetched successfully");
-  await getGasFromAllTxs();
-  console.log("Gas from all transactions fetched successfully");
+  console.log("Delegates parsed ✅");
+  await getProposalsStats();
+  console.log("Proposals stats fetched ✅");
+  if (payloads) {
+    await getPayloadsStats();
+    console.log("Payloads stats fetched ✅");
+  }
+  await getOtherInteractions();
+  console.log("Other interactions fetched ✅");
+  await getSwapTovariableStats();
+  console.log("Swap to variable stats fetched ✅");
+  await getSafeWalletInteractions();
+  console.log("SafeWallet interactions stats fetched ✅");
+  await getGasFromAllTxs(DEPLOYER_21);
+  console.log("Gas from all Deployer21 transactions fetched ✅");
   await writeOutput();
 }
 
@@ -165,20 +165,17 @@ async function getSwapTovariableStats() {
     process.env.TO_BLOCK
   );
 
-  for (let i = 0; i < history.length; i++) {
-    const idx = findDelegateIndex(history[i].from);
-    if (idx === -1) continue;
-
-    const receipt = await etherscanProvider.getTransactionReceipt(
-      history[i].hash
-    );
-    const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
-
-    if (history[i].data.startsWith("0x2520d5ee")) {
-      delegates[idx].swapPositionsToVariableV2Mainnet =
-        delegates[idx].swapPositionsToVariableV2Mainnet.add(gas);
-    }
-  }
+  await PromisePool.withConcurrency(2)
+    .for(history)
+    .process(async (tx) => {
+      const idx = findDelegateIndex(tx.from);
+      if (idx !== -1 && tx.data.startsWith("0x2520d5ee")) {
+        const receipt = await etherscanProvider.getTransactionReceipt(tx.hash);
+        const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+        delegates[idx].swapPositionsToVariableV2Mainnet =
+          delegates[idx].swapPositionsToVariableV2Mainnet.add(gas);
+      }
+    });
 }
 
 async function getSafeWalletInteractions() {
@@ -295,35 +292,30 @@ const isSafeWallet = async (proxyAddress) => {
   }
 };
 
-const getGasFromAllTxs = async () => {
-  // Find delegate index
-  let idx = -1;
-  for (let j = 0; j < delegates.length; j++) {
-    if (delegates[j].addresses.includes(DEPLOYER_21)) idx = j;
-  }
-  if (idx === -1) return;
+const getGasFromAllTxs = async (address) => {
+  const idx = findDelegateIndex(address, false);
 
   const history = await etherscanProvider.getHistory(
-    DEPLOYER_21,
+    address,
     process.env.FROM_BLOCK,
     process.env.TO_BLOCK
   );
 
-  const { results, errors } = await PromisePool.withConcurrency(2)
+  await PromisePool.withConcurrency(2)
     .for(history)
-    .process(async (tx, index, pool) => {
+    .process(async (tx) => {
       const gas = await getGasFromTx(tx.hash);
       delegates[idx].allTxsGasDeployer21 =
         delegates[idx].allTxsGasDeployer21.add(gas);
     });
 };
 
-const findDelegateIndex = (address) => {
+const findDelegateIndex = (address, skipD21 = true) => {
   // Find delegate index
   let idx = -1;
 
   // skip deployer 21 because we already taen into account all its txs
-  if (address === DEPLOYER_21) return idx;
+  if (skipD21 && address === DEPLOYER_21) return idx;
 
   for (let j = 0; j < delegates.length; j++) {
     if (delegates[j].addresses.includes(address)) idx = j;
