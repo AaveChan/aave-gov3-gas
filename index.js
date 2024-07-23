@@ -1,6 +1,5 @@
 import fs from "fs";
 import { constants, ethers } from "ethers";
-import { InfuraProvider } from "@ethersproject/providers";
 import "dotenv/config";
 import { PromisePool } from "@supercharge/promise-pool";
 
@@ -271,9 +270,10 @@ const isSafeWallet = async (proxyAddress) => {
     "0xa619486e00000000000000000000000000000000000000000000000000000000",
   ];
 
-  const infuraProvider = new InfuraProvider(1, process.env.INFURA_API_KEY);
-  const requestFunc = ({ method, params }) =>
-    infuraProvider.send(method, params);
+  const rpcProvider = new ethers.providers.JsonRpcProvider(
+    "https://eth.llamarpc.com"
+  );
+  const requestFunc = ({ method, params }) => rpcProvider.send(method, params);
 
   try {
     // SafeProxy contract
