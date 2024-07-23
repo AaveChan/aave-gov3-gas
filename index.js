@@ -226,7 +226,7 @@ async function getSafeWalletInteractions() {
 // - https://ethereum.stackexchange.com/a/141258
 const isSafeWallet = async (proxyAddress) => {
   // found at https://github.com/safe-global/safe-deployments/tree/main/src/assets
-  const canonicalAddressesMainnet = [
+  const singletonsAddressesMainnet = [
     "0x8942595a2dc5181df0465af0d7be08c8f23c93af", // v0.1.0 // found at https://help.safe.global/en/articles/40834-verify-safe-creation
     "0xb6029EA3B2c51D09a50B53CA8012FeEB05bDa35A", // v1.0.0
     "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F", // v1.1.0
@@ -257,7 +257,9 @@ const isSafeWallet = async (proxyAddress) => {
       return null;
     }
 
-    if (!canonicalAddressesMainnet.includes(ethers.utils.getAddress(address))) {
+    if (
+      !singletonsAddressesMainnet.includes(ethers.utils.getAddress(address))
+    ) {
       return null;
     }
 
