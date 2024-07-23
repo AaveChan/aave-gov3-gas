@@ -1,25 +1,27 @@
 {
-  "delegates": [
-    {
-      "name": "ACI",
-      "addresses": [
-        "0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922",
-        "0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4",
-        "0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193"
-      ],
-      "proposals": "0.090669168819436543",
-      "creationPayloads": "0.034207602211778844",
-      "executionPayloads": "0.0",
-      "swapPositionsToVariableV2Mainnet": "1.905530762857031902",
-      "otherInteractions": "0.126142492306571226",
-      "otherGouvernanceInteractions": "0.005016353397715838",
-      "deposits": "0.85",
-      "withdrawals": "0.75",
-      "total": "2.261566379592534353"
-    }
-  ],
-  "block_range": {
-    "from": "19818370",
-    "to": "20062310"
-  }
+	"delegates": [
+		{
+			"name": "ACI",
+			"addresses": [
+				"0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922",
+				"0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4",
+				"0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193"
+			],
+			"proposals": "0.090669168819436543",
+			"creationPayloads": "0.034207602211778844",
+			"executionPayloads": "0.0",
+			"swapPositionsToVariableV2Mainnet": "0.0",
+			"safeWalletInteractions": "0.000846711324025749",
+			"allTxsGasDeployer21": "2.106481477938976444",
+			"otherInteractions": "0.115913298037475626",
+			"otherGouvernanceInteractions": "0.005016353397715838",
+			"deposits": "0.85",
+			"withdrawals": "0.75",
+			"total": "2.453134611729409044"
+		}
+	],
+	"block_range": {
+		"from": "19818370",
+		"to": "20062310"
+	}
 }
