@@ -347,32 +347,12 @@ async function writeOutput() {
         .sub(delegates[i].withdrawals)
     );
 
-    delegates[i].deposits = ethers.utils.formatEther(delegates[i].deposits);
-    delegates[i].creationPayloads = ethers.utils.formatEther(
-      delegates[i].creationPayloads
-    );
-    delegates[i].executionPayloads = ethers.utils.formatEther(
-      delegates[i].executionPayloads
-    );
-    delegates[i].proposals = ethers.utils.formatEther(delegates[i].proposals);
-    delegates[i].otherGouvernanceInteractions = ethers.utils.formatEther(
-      delegates[i].otherGouvernanceInteractions
-    );
-    delegates[i].swapPositionsToVariableV2Mainnet = ethers.utils.formatEther(
-      delegates[i].swapPositionsToVariableV2Mainnet
-    );
-    delegates[i].safeWalletInteractions = ethers.utils.formatEther(
-      delegates[i].safeWalletInteractions
-    );
-    delegates[i].allTxsGasDeployer21 = ethers.utils.formatEther(
-      delegates[i].allTxsGasDeployer21
-    );
-    delegates[i].otherInteractions = ethers.utils.formatEther(
-      delegates[i].otherInteractions
-    );
-    delegates[i].withdrawals = ethers.utils.formatEther(
-      delegates[i].withdrawals
-    );
+    // compute each actions
+    for (const key in delegates[i]) {
+      if (key !== "name" && key !== "addresses" && key !== "total") {
+        delegates[i][key] = ethers.utils.formatEther(delegates[i][key]);
+      }
+    }
   }
 
   const file = {
