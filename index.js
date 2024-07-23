@@ -2,6 +2,7 @@ import fs from "fs";
 import { constants, ethers } from "ethers";
 import { InfuraProvider } from "@ethersproject/providers";
 import "dotenv/config";
+import { PromisePool } from "@supercharge/promise-pool";
 
 const AAVE_GOVERNANCE = "0x9AEE0B04504CeF83A65AC3f0e838D0593BCb2BC7";
 const AAVE_ETH_PAYLOAD_CONTROLLER =
@@ -26,12 +27,21 @@ let delegates = [];
 
 async function main() {
   await parseDelegates();
-  await getProposalsStats();
-  if (payloads) await getPayloadsStats();
-  await getOtherInteractions();
-  await getSwapTovariableStats();
-  await getSafeWalletInteractions();
+  // console.log("Delegates parsed successfully!");
+  // await getProposalsStats();
+  // console.log("Proposals stats fetched successfully!");
+  // if (payloads) {
+  //   await getPayloadsStats();
+  //   console.log("Payloads stats fetched successfully!");
+  // }
+  // await getOtherInteractions();
+  // console.log("Other interactions stats fetched successfully");
+  // await getSwapTovariableStats();
+  // console.log("Swap to variable stats fetched successfully");
+  // await getSafeWalletInteractions();
+  // console.log("SafeWallet interactions stats fetched successfully");
   await getGasFromAllTxs();
+  console.log("Gas from all transactions fetched successfully");
   await writeOutput();
 }
 
@@ -43,16 +53,10 @@ async function getProposalsStats() {
   );
 
   for (let i = 0; i < history.length; i++) {
+    const idx = findDelegateIndex(history[i].from);
+    if (idx === -1) continue;
     // Manage createProposal function calls
     if (history[i].data.startsWith("0x3bec1bfc")) {
-      let idx = -1;
-
-      // Find delegate index
-      for (let j = 0; j < delegates.length; j++) {
-        if (delegates[j].addresses.includes(history[i].from)) idx = j;
-      }
-      if (idx == -1) continue;
-
       if (proposals) {
         const receipt = await etherscanProvider.getTransactionReceipt(
           history[i].hash
@@ -68,14 +72,6 @@ async function getProposalsStats() {
         delegates[idx].deposits = delegates[idx].deposits.add(value);
       }
     } else {
-      let idx = -1;
-
-      // Find delegate index
-      for (let j = 0; j < delegates.length; j++) {
-        if (delegates[j].addresses.includes(history[i].from)) idx = j;
-      }
-      if (idx == -1) continue;
-
       const receipt = await etherscanProvider.getTransactionReceipt(
         history[i].hash
       );
@@ -113,13 +109,8 @@ async function getPayloadsStats() {
   );
 
   for (let i = 0; i < history.length; i++) {
-    let idx = -1;
-
-    // Find delegate index
-    for (let j = 0; j < delegates.length; j++) {
-      if (delegates[j].addresses.includes(history[i].from)) idx = j;
-    }
-    if (idx == -1) continue;
+    const idx = findDelegateIndex(history[i].from);
+    if (idx === -1) continue;
 
     const receipt = await etherscanProvider.getTransactionReceipt(
       history[i].hash
@@ -152,13 +143,8 @@ async function getOtherInteractions() {
   );
 
   for (let i = 0; i < history.length; i++) {
-    let idx = -1;
-
-    // Find delegate index
-    for (let j = 0; j < delegates.length; j++) {
-      if (delegates[j].addresses.includes(history[i].from)) idx = j;
-    }
-    if (idx == -1) continue;
+    const idx = findDelegateIndex(history[i].from);
+    if (idx === -1) continue;
 
     const receipt = await etherscanProvider.getTransactionReceipt(
       history[i].hash
@@ -180,13 +166,8 @@ async function getSwapTovariableStats() {
   );
 
   for (let i = 0; i < history.length; i++) {
-    let idx = -1;
-
-    // Find delegate index
-    for (let j = 0; j < delegates.length; j++) {
-      if (delegates[j].addresses.includes(history[i].from)) idx = j;
-    }
-    if (idx == -1) continue;
+    const idx = findDelegateIndex(history[i].from);
+    if (idx === -1) continue;
 
     const receipt = await etherscanProvider.getTransactionReceipt(
       history[i].hash
@@ -236,12 +217,8 @@ async function getSafeWalletInteractions() {
   const addressesToCheck = [ACI_ETH, AAVECHAN_ETH];
 
   for (const address of addressesToCheck) {
-    let idx = -1;
-    // Find delegate index
-    for (let j = 0; j < delegates.length; j++) {
-      if (delegates[j].addresses.includes(address)) idx = j;
-    }
-    if (idx == -1) continue;
+    const idx = findDelegateIndex(address);
+    if (idx === -1) continue;
 
     await safeWalletInteractions(address, idx);
   }
@@ -319,12 +296,12 @@ const isSafeWallet = async (proxyAddress) => {
 };
 
 const getGasFromAllTxs = async () => {
-  let idx = -1;
   // Find delegate index
+  let idx = -1;
   for (let j = 0; j < delegates.length; j++) {
     if (delegates[j].addresses.includes(DEPLOYER_21)) idx = j;
   }
-  if (idx == -1) return null;
+  if (idx === -1) return;
 
   const history = await etherscanProvider.getHistory(
     DEPLOYER_21,
@@ -332,11 +309,27 @@ const getGasFromAllTxs = async () => {
     process.env.TO_BLOCK
   );
 
-  for (let i = 0; i < history.length; i++) {
-    const gas = await getGasFromTx(history[i].hash);
-    delegates[idx].allTxsGasDeployer21 =
-      delegates[idx].allTxsGasDeployer21.add(gas);
+  const { results, errors } = await PromisePool.withConcurrency(2)
+    .for(history)
+    .process(async (tx, index, pool) => {
+      const gas = await getGasFromTx(tx.hash);
+      delegates[idx].allTxsGasDeployer21 =
+        delegates[idx].allTxsGasDeployer21.add(gas);
+    });
+};
+
+const findDelegateIndex = (address) => {
+  // Find delegate index
+  let idx = -1;
+
+  // skip deployer 21 because we already taen into account all its txs
+  if (address === DEPLOYER_21) return idx;
+
+  for (let j = 0; j < delegates.length; j++) {
+    if (delegates[j].addresses.includes(address)) idx = j;
   }
+
+  return idx;
 };
 
 const getGasFromTx = async (txHash) => {
