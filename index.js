@@ -316,7 +316,7 @@ const findDelegateIndex = (address, skipD21 = true) => {
   // Find delegate index
   let idx = -1;
 
-  // skip deployer 21 because we already taen into account all its txs
+  // skip deployer 21 because we already taken into account all its txs
   if (skipD21 && address === DEPLOYER_21) return idx;
 
   for (let j = 0; j < delegates.length; j++) {
