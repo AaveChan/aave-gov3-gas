@@ -10,12 +10,14 @@
       "proposals": "0.090669168819436543",
       "creationPayloads": "0.034207602211778844",
       "executionPayloads": "0.0",
-      "swapPositionsToVariableV2Mainnet": "1.905530762857031902",
-      "otherInteractions": "0.126142492306571226",
+      "swapPositionsToVariableV2Mainnet": "0.0",
+      "safeWalletInteractions": "0.000846711324025749",
+      "allTxsGasDeployer21": "2.106481477938976444",
+      "otherInteractions": "0.115913298037475626",
       "otherGouvernanceInteractions": "0.005016353397715838",
       "deposits": "0.85",
       "withdrawals": "0.75",
-      "total": "2.261566379592534353"
+      "total": "2.453134611729409044"
     }
   ],
   "block_range": {

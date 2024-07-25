@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/AaveChan/aave-gov3-gas#readme",
   "dependencies": {
+    "@supercharge/promise-pool": "^3.2.0",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "jsconfig.json": "^2.3.3"
