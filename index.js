@@ -43,8 +43,8 @@ async function main() {
   }
   await getOtherInteractions();
   console.log("Other interactions fetched ✅");
-  await getSwapTovariableStats();
-  console.log("Swap to variable stats fetched ✅");
+  // await getSwapTovariableStats(); // deployer 21 is used for every swap to variable so we already have all the txs from it
+  // console.log("Swap to variable stats fetched ✅");
   await getSafeWalletInteractions();
   console.log("SafeWallet interactions stats fetched ✅");
   await getGasFromAllTxs(DEPLOYER_21, "allTxsGasDeployer21");
@@ -357,7 +357,7 @@ async function writeOutput() {
         .add(delegates[i].executionPayloads)
         .add(delegates[i].proposals)
         .add(delegates[i].otherGouvernanceInteractions)
-        .add(delegates[i].swapPositionsToVariableV2Mainnet)
+        // .add(delegates[i].swapPositionsToVariableV2Mainnet)
         .add(delegates[i].safeWalletInteractions)
         .add(delegates[i].allTxsGasDeployer21)
         .add(delegates[i].allTxsGasCatapulta)
@@ -396,7 +396,7 @@ async function parseDelegates() {
       proposals: ethers.BigNumber.from(0),
       creationPayloads: ethers.BigNumber.from(0),
       executionPayloads: ethers.BigNumber.from(0),
-      swapPositionsToVariableV2Mainnet: ethers.BigNumber.from(0),
+      // swapPositionsToVariableV2Mainnet: ethers.BigNumber.from(0),
       safeWalletInteractions: ethers.BigNumber.from(0),
       allTxsGasDeployer21: ethers.BigNumber.from(0),
       allTxsGasCatapulta: ethers.BigNumber.from(0),
