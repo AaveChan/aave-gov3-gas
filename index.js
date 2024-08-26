@@ -13,6 +13,8 @@ const ACI_ETH = "0x57ab7ee15cE5ECacB1aB84EE42D5A9d0d8112922";
 const AAVECHAN_ETH = "0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4";
 const DEPLOYER_21 = "0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193";
 
+const CATAPULTA = "0x020E4359255f907DF480EbFfc8a7b7beac0c0216";
+
 const deposits = true;
 const payloads = true;
 const proposals = true;
@@ -20,6 +22,12 @@ const proposals = true;
 const etherscanProvider = new ethers.providers.EtherscanProvider(
   ethers.providers.getNetwork("homestead"),
   process.env.ETHERSCAN_API_KEY
+);
+
+const rpcProvider = new ethers.providers.JsonRpcProvider(
+  process.env.RPC_URL_ETH == ""
+    ? "https://eth.llamarpc.com"
+    : process.env.RPC_URL_ETH
 );
 
 let delegates = [];
@@ -39,8 +47,10 @@ async function main() {
   console.log("Swap to variable stats fetched ✅");
   await getSafeWalletInteractions();
   console.log("SafeWallet interactions stats fetched ✅");
-  await getGasFromAllTxs(DEPLOYER_21);
+  await getGasFromAllTxs(DEPLOYER_21, "allTxsGasDeployer21");
   console.log("Gas from all Deployer21 transactions fetched ✅");
+  await getGasFromAllTxs(CATAPULTA, "allTxsGasCatapulta");
+  console.log("Gas from all Catapulta transactions fetched ✅");
   await writeOutput();
 }
 
@@ -270,9 +280,6 @@ const isSafeWallet = async (proxyAddress) => {
     "0xa619486e00000000000000000000000000000000000000000000000000000000",
   ];
 
-  const rpcProvider = new ethers.providers.JsonRpcProvider(
-    "https://eth.llamarpc.com"
-  );
   const requestFunc = ({ method, params }) => rpcProvider.send(method, params);
 
   try {
@@ -294,8 +301,12 @@ const isSafeWallet = async (proxyAddress) => {
   }
 };
 
-const getGasFromAllTxs = async (address) => {
+const getGasFromAllTxs = async (address, fieldName) => {
   const idx = findDelegateIndex(address, false);
+  if (idx === -1) {
+    console.log(`Delegate not found for address: ${address}`);
+    return;
+  }
 
   const history = await etherscanProvider.getHistory(
     address,
@@ -303,12 +314,16 @@ const getGasFromAllTxs = async (address) => {
     process.env.TO_BLOCK
   );
 
-  await PromisePool.withConcurrency(2)
+  let concurency = 2;
+  if (process.env.RPC_URL_ETH !== "") {
+    concurency = 10;
+  }
+
+  await PromisePool.withConcurrency(concurency)
     .for(history)
     .process(async (tx) => {
       const gas = await getGasFromTx(tx.hash);
-      delegates[idx].allTxsGasDeployer21 =
-        delegates[idx].allTxsGasDeployer21.add(gas);
+      delegates[idx][fieldName] = delegates[idx][fieldName].add(gas);
     });
 };
 
@@ -327,8 +342,8 @@ const findDelegateIndex = (address, skipD21 = true) => {
 };
 
 const getGasFromTx = async (txHash) => {
-  const receipt = await etherscanProvider.getTransactionReceipt(txHash);
-  const gas = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+  const tx = await rpcProvider.getTransactionReceipt(txHash);
+  const gas = tx.gasUsed.mul(tx.effectiveGasPrice);
   return gas;
 };
 
@@ -345,6 +360,7 @@ async function writeOutput() {
         .add(delegates[i].swapPositionsToVariableV2Mainnet)
         .add(delegates[i].safeWalletInteractions)
         .add(delegates[i].allTxsGasDeployer21)
+        .add(delegates[i].allTxsGasCatapulta)
         .add(delegates[i].otherInteractions)
         .sub(delegates[i].withdrawals)
     );
@@ -383,6 +399,7 @@ async function parseDelegates() {
       swapPositionsToVariableV2Mainnet: ethers.BigNumber.from(0),
       safeWalletInteractions: ethers.BigNumber.from(0),
       allTxsGasDeployer21: ethers.BigNumber.from(0),
+      allTxsGasCatapulta: ethers.BigNumber.from(0),
       otherInteractions: ethers.BigNumber.from(0),
       otherGouvernanceInteractions: ethers.BigNumber.from(0),
       deposits: ethers.BigNumber.from(0),
