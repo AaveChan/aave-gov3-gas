@@ -43,8 +43,6 @@ async function main() {
   }
   await getOtherInteractions();
   console.log("Other interactions fetched ✅");
-  // await getSwapTovariableStats(); // deployer 21 is used for every swap to variable so we already have all the txs from it
-  // console.log("Swap to variable stats fetched ✅");
   await getSafeWalletInteractions();
   console.log("SafeWallet interactions stats fetched ✅");
   await getGasFromAllTxs(DEPLOYER_21, "allTxsGasDeployer21");
@@ -167,6 +165,9 @@ async function getOtherInteractions() {
   }
 }
 
+// Deployer 21 make all swapTovariable() txs (on v2, v3, mainnet and L2s)
+// Because we already take into account all the txs from deployer 21, we don't need to use this function anymore
+// (it would double count txs iif so)
 async function getSwapTovariableStats() {
   const history = await etherscanProvider.getHistory(
     AAVE_POOL_V2,
