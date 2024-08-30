@@ -6,5 +6,9 @@
       "0x329c54289Ff5D6B7b7daE13592C6B1EDA1543eD4",
       "0x3Cbded22F878aFC8d39dCD744d3Fe62086B76193"
     ]
+  },
+  {
+    "name": "Catapulta",
+    "addresses": ["0x020E4359255f907DF480EbFfc8a7b7beac0c0216"]
   }
 ]

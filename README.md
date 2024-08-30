@@ -1,7 +1,13 @@
-edit .env file for the desired block range & add your etherscan API key.
+# Setup
 
+- Edit the .env file and set:
 
-`npm i`
+  - the desired block range
+  - an etherscan API key
+  - (optional) an ETH RPC (your own node will make computation faster)
 
+- Install packages: `npm i`
+
+# Run
 
 `node index.js`
